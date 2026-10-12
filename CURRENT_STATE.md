@@ -57,3 +57,7 @@ On a configured machine with JDK 17 and Android SDK 35, run from the repository 
 - Previously mentioned `CoreWorkflowTest` and `RestartTest` were absent from the recovered repository and were not recreated.
 - The previously documented unused orange alcohol threshold in `Engine.statuses` remains unchanged and outside this build-baseline task.
 - Release builds/signing, lint, device compatibility and production readiness were not evaluated.
+
+## Publication blocker
+
+The verified source was committed locally, but publication to GitHub was blocked: command-line Git had no HTTPS write credential, and the connected GitHub integration returned HTTP 403 (`Resource not accessible by integration`) when creating the commit tree. GitHub `main` has not been updated. Repository write access must be restored before this task meets its full definition of done. A Git bundle preserves the commits for subsequent import and push; it is a recovery transport, not a replacement source of truth.
