@@ -2,6 +2,7 @@ package com.foodlogger.data
 
 import androidx.room.withTransaction
 import com.foodlogger.domain.*
+import com.foodlogger.domain.Target
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*

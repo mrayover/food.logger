@@ -2,6 +2,7 @@ package com.foodlogger.data
 
 import androidx.room.withTransaction
 import com.foodlogger.domain.*
+import com.foodlogger.domain.Target
 import kotlinx.serialization.encodeToString
 import java.time.LocalDate
 import kotlin.math.sin

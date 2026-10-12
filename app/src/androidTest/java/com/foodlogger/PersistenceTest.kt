@@ -5,6 +5,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.room.Room
 import com.foodlogger.data.*
 import com.foodlogger.domain.*
+import com.foodlogger.domain.Target
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.*
@@ -14,7 +15,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PersistenceTest {
  private val context=InstrumentationRegistry.getInstrumentation().targetContext
- @Test fun snapshotsSurviveEditingDeletionAndRelaunch()=runBlocking {
+ @Test fun snapshotsSurviveEditingDeletionAndRelaunch(): Unit=runBlocking {
   context.deleteDatabase("persistence-test.db")
   var db=Room.databaseBuilder(context,FoodDatabase::class.java,"persistence-test.db").addMigrations(FoodDatabase.MIGRATION_1_2).build()
   var repo=Repository(db)

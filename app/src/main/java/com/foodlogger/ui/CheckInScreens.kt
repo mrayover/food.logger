@@ -11,9 +11,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.foodlogger.AppModel
 import com.foodlogger.domain.*
+import com.foodlogger.domain.Target
 import kotlinx.serialization.encodeToString
 import java.time.LocalDate
 
+@kotlinx.serialization.Serializable
 data class CheckDraft(val date: String,val weight: Double,val hunger: Int,val energy: Int,val training: Int,val notes: String,val excluded: Set<String>,val analysis: Analysis,val correction: CheckIn?=null)
 suspend fun saveDecision(vm: AppModel,d: CheckDraft,decision: String,chosen: Target) {
  val old=d.correction

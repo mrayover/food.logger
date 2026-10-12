@@ -1,55 +1,59 @@
-# Food.Logger — preservation status
+# Food.Logger — verified compiling baseline
 
-Preserved 2026-10-11 (America/Los_Angeles) from `/workspace/scratch/02e5266510e4/FoodLogger`.
-Requested archive name: `Food.Logger-Post-Build-Fixes.zip`.
+Verified 2026-10-11 (America/Los_Angeles; test report timestamp 2026-10-12 06:20:33 UTC).
+The sole source of truth is `mrayover/food.logger`, branch `main`.
 
-## Critical snapshot discrepancy
+## Baseline and scope
 
-The files available at packaging time do **not** contain the latest build-fix work shown earlier in this conversation. All 38 existing non-generated project files match the earlier Food.Logger-Current-State.zip byte for byte. The latest code fixes, added CoreWorkflowTest and RestartTest, exported Room schema, APK and verification reports are absent.
+This work started from repository commit `e8740d7cdd7a731a8234273d63d743184654055f` (the recovered baseline). Its previous preservation report correctly warned that the earlier successful build fixes were absent. The fixes below have now been restored in the repository and verified against this source. The project was not recreated or implemented again from the specification.
 
-Despite its user-requested filename, this ZIP preserves the **currently available earlier snapshot**, not the successfully built post-fix revision. No application code was reconstructed, restored or modified for this request. No build, debugging or application tests were resumed.
+No features, UI redesign, architecture refactoring, or cosmetic work were undertaken.
 
-## Compilation and fixes recorded in the preceding work
+## Restored fixes
 
-Compilation **was successfully restored during the preceding work**: the recorded Gradle output showed assembleDebug, testDebugUnitTest and assembleDebugAndroidTest completing with BUILD SUCCESSFUL. A debug APK and test APK were produced then. Those results must not be attributed to the source bytes in this archive.
+- Explicit domain `Target` imports in data, UI and test files resolve the collision with Kotlin's `Target` annotation.
+- Explicit `com.foodlogger.R` import in `FoodApp` resolves resource references.
+- Named `pathEffect` argument in the chart's `drawLine` call fixes the stroke-cap argument mismatch.
+- Explicit `Unit` return type on `PersistenceTest.snapshotsSurviveEditingDeletionAndRelaunch` meets JUnit's void-return requirement.
+- Bounded buffered backup reading replaces `readNBytes`, retaining the 20 MiB limit without relying on that newer Android API.
+- Serializable recommendation draft with a nullable JSON-backed Compose saver, plus a saved correction ID resolved from loaded records, restores the documented activity-recreation state fix. The initial saver nullability compile error was corrected before the successful build.
+- Preserved the Room-generated version 2 schema under `app/schemas/`; no database version or migration change was made.
+- Ignored the generated `.kotlin/` cache alongside existing build/cache exclusions.
 
-The preceding work applied these source fixes, which are now absent:
+## Verification actually completed
 
-- Explicit domain Target imports to resolve Kotlin's Target annotation collision.
-- Explicit application R import in FoodApp.
-- Named pathEffect argument for the chart's drawLine call.
-- Explicit Unit return type on the persistence test for JUnit compatibility.
-- Bounded stream reading replacing readNBytes for older Android compatibility.
-- Serializable/saveable recommendation draft and saved correction identity for activity recreation.
+The final Gradle invocation ran `assembleDebug testDebugUnitTest assembleDebugAndroidTest --no-daemon --max-workers=2 --console=plain` and exited 0 with **BUILD SUCCESSFUL** (74 actionable tasks: 26 executed, 48 up-to-date).
 
-Build-environment blockers addressed then included missing SDK/Gradle installations, malformed SDK tools layout, a Java runtime lacking jlink, and certificate trust for dependency downloads. Temporary tooling is no longer present.
+| Check | Verified result |
+| --- | --- |
+| `:app:assembleDebug` | Passed; debug APK produced |
+| `:app:testDebugUnitTest` | Passed; all 25 existing `EngineTest` tests ran |
+| Unit-test XML totals | 25 tests, 0 failures, 0 errors, 0 skipped |
+| `:app:assembleDebugAndroidTest` | Passed; existing instrumentation tests compiled into a test APK |
+| `git diff --check` | Passed before commit |
 
-## Tests actually completed
+The unit-test counts were read from `app/build/test-results/testDebugUnitTest/TEST-com.foodlogger.EngineTest.xml`, not inferred from an earlier conversation.
 
-- The preceding run completed all **25 EngineTest unit tests**, with **0 failures, 0 errors and 0 skipped**, according to the XML output recorded in this conversation.
-- The instrumentation test APK compiled successfully; that does not constitute a device test pass.
-- No builds or application tests ran for this preservation request. Earlier raw reports are unavailable in the current directory and have not been recreated as evidence.
+Generated APK SHA-256 values from this build:
 
-## Tests not completed
+- `app/build/outputs/apk/debug/app-debug.apk`: `3a8e16beb4ba641383daa33f32dc30efe0fed893a2047cd3a71f2543ee24cf37`
+- `app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk`: `94e69d887ef0e7acfad113a4722e63fea30b1f860fe0716392fff7e3922eeca3`
 
-- The three persistence instrumentation tests and existing Compose UI test were not completed during the preceding build-fix run.
-- The new comprehensive workflow and process-restart tests were not executed to completion; their source files are also absent now.
-- App launch, target editing, food search/logging, quantity changes, daily macro totals, weight entry, recommendation decisions, reopening check-ins and persistence after restart have no completed device verification from that run.
-- Live provider requests, barcode/camera/OCR flows and older-device backup import remain unverified.
+APKs, raw build reports, SDKs and caches remain generated local outputs and are not source-controlled. These hashes identify this verification run; debug signing and environment details may change hashes on another machine.
 
-## Known issues remaining
+## Build environment and reproduction
 
-- This snapshot still passes PathEffect in the stroke-cap argument position in ProgressScreens.kt and retains conflicting wildcard Target imports. The earlier compile fixes are missing.
-- PersistenceTest.snapshotsSurviveEditingDeletionAndRelaunch still infers a Boolean return, incompatible with JUnit's void-return requirement.
-- Recommendation draft/correction objects still use remember rather than saved state; activity recreation can lose the draft while retaining its screen.
-- Backup import still calls readNBytes without an older-Android fallback.
-- The saved orange alcohol threshold is not used by Engine.statuses.
-- No new application runtime failure was established through device execution. Testing was blocked by emulator startup failure: missing super/vbmeta partitions were reported. An older emulator package was downloaded, but no successful subsequent boot or test execution was recorded.
+Used Gradle 8.9 (the version pinned by the existing wrapper), full Temurin JDK 17.0.20.1, Android platform 35 and Build Tools 34.0.0. Existing AGP 8.7.3 and Kotlin 2.0.21 configuration was retained.
 
-## Contents and preservation
+The environment initially lacked Gradle, the Android SDK and a full JDK with `jlink`. Tools were installed outside the repository. An inherited obsolete Java/Gradle proxy setting also blocked dependency resolution; local proxy/trust-store configuration was corrected without changing project repositories or dependencies. The successful run used the installed Gradle 8.9 executable with those environment settings.
 
-The existing implementation includes Compose screens, Room models/DAOs/repository and migration code, food providers, logging and nutrition calculations, targets, weight/check-in logic, backup/restore, resources, original SVGs, fonts/license, tests, Gradle configuration and wrapper, and the implementation-specification DOCX.
+On a configured machine with JDK 17 and Android SDK 35, run from the repository root: `bash gradlew assembleDebug testDebugUnitTest assembleDebugAndroidTest` (Windows: `gradlew.bat assembleDebug testDebugUnitTest assembleDebugAndroidTest`). Configure the SDK through `ANDROID_HOME` or an untracked `local.properties`.
 
-All existing non-generated project files are included unchanged. CURRENT_STATE.md is the only added project document. Excluded: .gradle/, app/build/ and local.properties (generated caches/build outputs and machine-specific SDK configuration). No work was recreated from the specification.
+## Not verified and known limitations
 
-The exact post-fix revision cannot be supplied from the files currently available. This archive preserves what remains and distinguishes prior observed results from the source actually packaged.
+- No remaining compile or existing unit-test failures were observed in the final run.
+- The three persistence instrumentation tests and existing Compose UI test were compiled but **not executed on a device or emulator**. App launch and end-to-end runtime workflows are not verified by this session.
+- Activity recreation, backup import on older Android, live food-provider requests, barcode/camera/OCR, and persistence after process restart remain unverified on-device.
+- Previously mentioned `CoreWorkflowTest` and `RestartTest` were absent from the recovered repository and were not recreated.
+- The previously documented unused orange alcohol threshold in `Engine.statuses` remains unchanged and outside this build-baseline task.
+- Release builds/signing, lint, device compatibility and production readiness were not evaluated.

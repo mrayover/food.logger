@@ -22,7 +22,20 @@ import kotlinx.serialization.encodeToString
  var weightUnit by rememberSaveable {mutableStateOf(d.settings.weightUnit)};var foodUnit by rememberSaveable {mutableStateOf(d.settings.foodUnit)};var checkDay by rememberSaveable {mutableStateOf(d.settings.checkDay.toString())};var calorieTol by rememberSaveable {mutableStateOf((d.settings.calorieTolerance*100).f(1))};var proteinTol by rememberSaveable {mutableStateOf((d.settings.proteinTolerance*100).f(1))};var orange by rememberSaveable {mutableStateOf(d.settings.alcoholOrangeExtra.toString())};var red by rememberSaveable {mutableStateOf(d.settings.alcoholRedExtra.toString())}
  var importBackup by remember {mutableStateOf<Backup?>(null)};var exportSummary by rememberSaveable {mutableStateOf(false)};var confirm by remember {mutableStateOf<String?>(null)}
  val export=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) {uri->uri?.let {vm.work {val text=if(exportSummary)vm.repository.summary(d)else json.encodeToString(vm.repository.backup(d));withContext(Dispatchers.IO){context.contentResolver.openOutputStream(it)?.use {stream->stream.write(text.toByteArray())}?:error("Cannot open destination")};vm.message.value="Export saved."}}}
- val importer=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {uri->uri?.let {vm.work {val text=withContext(Dispatchers.IO){context.contentResolver.openInputStream(it)?.use {stream->val bytes=stream.readNBytes(20*1024*1024+1);require(bytes.size<=20*1024*1024){"Backup is too large (20 MB limit)."};bytes.toString(Charsets.UTF_8)}?:error("Cannot read backup")};val backup=json.decodeFromString<Backup>(text);vm.repository.validate(backup);importBackup=backup}}}
+ val importer=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {uri->uri?.let {vm.work {val text=withContext(Dispatchers.IO){context.contentResolver.openInputStream(it)?.use {stream->
+   val limit=20*1024*1024
+   val output=java.io.ByteArrayOutputStream()
+   val buffer=ByteArray(8192)
+   var total=0
+   while(true) {
+    val count=stream.read(buffer,0,minOf(buffer.size,limit-total+1))
+    if(count<0) break
+    total+=count
+    require(total<=limit){"Backup is too large (20 MB limit)."}
+    output.write(buffer,0,count)
+   }
+   output.toString("UTF-8")
+  }?:error("Cannot read backup")};val backup=json.decodeFromString<Backup>(text);vm.repository.validate(backup);importBackup=backup}}}
  Page {
   Heading("Preferences");Text("Weight units");Choice(listOf("lb","kg"),weightUnit) {weightUnit=it};Text("Food weight units");Choice(listOf("g","oz"),foodUnit) {foodUnit=it}
   Field("Check-in weekday (1 Monday … 7 Sunday)",checkDay,{checkDay=it},true);Field("Calorie tolerance ± %",calorieTol,{calorieTol=it},true);Field("Protein below-target tolerance %",proteinTol,{proteinTol=it},true)

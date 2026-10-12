@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.unit.dp
 import com.foodlogger.domain.*
+import com.foodlogger.domain.Target
 import com.foodlogger.data.validateTarget
 import java.time.LocalDate
 import java.time.DayOfWeek
@@ -51,7 +52,7 @@ fun toPounds(value: Double,unit: String)=if(unit=="kg")value*2.2046226218 else v
   repeat(4) {i->val y=12f+(size.height-24f)*i/3;drawLine(Color(0xFFE4ECEF),Offset(0f,y),Offset(size.width,y),1f)}
   val path=Path();points.forEachIndexed {i,p->val o=xy(p.date,p.smooth);if(i==0)path.moveTo(o.x,o.y)else path.lineTo(o.x,o.y)};drawPath(path,Teal,style=Stroke(width=5f))
   points.forEach {p->drawCircle(Color(0xFF7EB3BF),4f,xy(p.date,p.actual))}
-  d.checkins.filter {it.date>=points.first().date && it.date<=points.last().date}.forEach {c->val x=xy(c.date,min).x;drawLine(Green.copy(alpha=.5f),Offset(x,12f),Offset(x,size.height-12f),2f,PathEffect.dashPathEffect(floatArrayOf(5f,5f)))}
+  d.checkins.filter {it.date>=points.first().date && it.date<=points.last().date}.forEach {c->val x=xy(c.date,min).x;drawLine(Green.copy(alpha=.5f),Offset(x,12f),Offset(x,size.height-12f),2f,pathEffect=PathEffect.dashPathEffect(floatArrayOf(5f,5f)))}
  }
  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {Hint(points.first().date);Hint(points.last().date)}
  Hint("Dots: weigh-ins · Line: EWMA (α = 0.30) · Dashed: check-ins")

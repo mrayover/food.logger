@@ -1,6 +1,7 @@
 package com.foodlogger
 
 import com.foodlogger.domain.*
+import com.foodlogger.domain.Target
 import com.foodlogger.providers.*
 import kotlinx.serialization.encodeToString
 import org.json.JSONObject

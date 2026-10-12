@@ -5,6 +5,7 @@ import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.foodlogger.domain.*
+import com.foodlogger.domain.Target
 import kotlinx.coroutines.flow.Flow
 
 @Dao interface Store {
