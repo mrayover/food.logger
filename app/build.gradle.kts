@@ -25,7 +25,7 @@ android {
  compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
  kotlinOptions { jvmTarget = "17" }
  packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
- testOptions { unitTests.isReturnDefaultValues = true }
+ testOptions { unitTests.isReturnDefaultValues = true; unitTests.isIncludeAndroidResources = true }
 }
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 dependencies {
@@ -44,6 +44,7 @@ dependencies {
  implementation("com.journeyapps:zxing-android-embedded:4.3.0")
  implementation("com.google.mlkit:text-recognition:16.0.1")
  testImplementation("junit:junit:4.13.2")
+ testImplementation("org.robolectric:robolectric:4.14.1")
  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
  testImplementation("org.json:json:20240303")
  androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))

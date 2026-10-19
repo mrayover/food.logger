@@ -1,0 +1,24 @@
+{
+  "asset_sha256": "0e52bcfb98b74f137db74400138ef7104f0264c31b4af4da6e40c0c06a5effee",
+  "catalog_version": 1,
+  "excluded_missing_macros": [],
+  "food_count": 7793,
+  "gzip_bytes": 11371229,
+  "license": "CC0 1.0",
+  "nutrient_basis": "per 100 g edible portion",
+  "source": "USDA FoodData Central SR Legacy April 2018",
+  "source_counts": {
+    "food": 7793,
+    "food_category": 28,
+    "food_nutrient": 644125,
+    "food_nutrient_derivation": 64,
+    "food_nutrient_source": 10,
+    "food_portion": 14449,
+    "measure_unit": 122,
+    "nutrient": 474,
+    "sr_legacy_food": 7793
+  },
+  "source_sha256": "b80817294b8850530aaedf2e515c02593b1824f763a0ff356e5c2081643e6fd0",
+  "source_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip",
+  "sqlite_bytes": 41426944
+}

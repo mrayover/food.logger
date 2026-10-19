@@ -32,6 +32,14 @@ import java.io.File
 
 @Composable fun AddFood(vm: AppModel,d: AppData,meal: String,select: (Food)->Unit,create: (Food)->Unit) {
  var query by rememberSaveable {mutableStateOf("")};var remote by remember {mutableStateOf(emptyList<Food>())};var messages by remember {mutableStateOf(emptyList<String>())};var searching by remember {mutableStateOf(false)};var barcodeEntry by remember {mutableStateOf(false)};var showScan by remember {mutableStateOf(false)}
+ var offline by remember {mutableStateOf(emptyList<Food>())}
+ var offlineError by remember {mutableStateOf<String?>(null)}
+ LaunchedEffect(query) {
+  offline=emptyList();offlineError=null
+  try { offline=vm.offlineCatalog.search(query) }
+  catch(e: CancellationException) {throw e}
+  catch(e: Exception) {offlineError="Offline catalog unavailable. Try again or use your saved foods."}
+ }
  val scope=rememberCoroutineScope();val context=LocalContext.current
  var job by remember {mutableStateOf<Job?>(null)}
  fun runSearch(code: String?=null) {job?.cancel();job=scope.launch {searching=true;messages=emptyList();try {val r=vm.search.search(code?:query,code!=null);remote=r.foods;messages=r.messages;if(code!=null){if(r.foods.isNotEmpty()) select(r.foods.first()) else messages=messages+"Barcode not found. Scan the label or create this food manually."}}finally{searching=false}}}
@@ -48,22 +56,26 @@ import java.io.File
  val gallery=rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {it?.let(::recognize)}
  fun takePhoto() {val file=File(context.cacheDir,"scans/label.jpg");file.parentFile?.mkdirs();val uri=FileProvider.getUriForFile(context,BuildConfig.APPLICATION_ID+".files",file);photoUri=uri.toString();runCatching {photo.launch(uri)}.onFailure {messages=listOf("No camera app available. Choose a label photo instead.")}}
  val cameraPermission=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {granted->if(granted)takePhoto()else messages=listOf("Camera permission was denied. Choose a photo or enter values manually.")}
- val local=d.foods.filter {it.kind!="ALCOHOL" && (query.isBlank() || "${it.name} ${it.brand} ${it.barcode}".contains(query,true))}.sortedWith(compareByDescending<Food>{it.lastUsedAt>0}.thenByDescending {it.lastUsedAt}.thenByDescending {it.favorite}.thenBy {it.name})
+ val local=d.foods.filter {it.kind!="ALCOHOL" && (query.isBlank() || CatalogQuery.matchesPersonal("${it.name} ${it.brand} ${it.barcode}",query))}.sortedWith(compareByDescending<Food>{it.lastUsedAt>0}.thenByDescending {it.lastUsedAt}.thenByDescending {it.favorite}.thenBy {it.name})
  Column(Modifier.fillMaxSize().padding(20.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
   Heading("Add to $meal")
-  Field("Search foods or brands",query,{query=it;remote=emptyList()})
+  Field("Search foods or brands",query,{job?.cancel();query=it;remote=emptyList();messages=emptyList()})
   Action("Search databases",query.trim().length>=2 && !searching) {runSearch()}
   Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {OutlinedButton({barcode.launch(scannerOptions)},Modifier.weight(1f)) {Text("Scan barcode")};OutlinedButton({showScan=true},Modifier.weight(1f)) {Text("Scan label")}}
   Row {TextButton({barcodeEntry=true}) {Text("Enter barcode")};TextButton({create(Food())}) {Text("Create food manually")}}
   if(searching)LinearProgressIndicator(Modifier.fillMaxWidth())
   messages.forEach {Hint(it)}
-  if(BuildConfig.USDA_API_KEY.isBlank())Hint("Open Food Facts search · USDA key not configured")
+  offlineError?.let {Hint(it)}
+  if(BuildConfig.USDA_API_KEY.isBlank())Hint("Offline USDA catalog ready · Online USDA key not configured")
   LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp)) {
    if(local.isNotEmpty())item {Hint("YOUR FOODS · RECENT & FAVORITES")}
    items(local,key={"local-"+it.id}) {FoodResult(it,d) {select(it)}}
+   val offlineMatches=offline.filter {f->local.none {it.id==f.id}}
+   if(offlineMatches.isNotEmpty()) item {Hint("OFFLINE USDA FOODS · PER 100 G")}
+   items(offlineMatches,key={"offline-"+it.id}) {FoodResult(it,d) {select(d.foods.find {f->f.id==it.id}?:it)}}
    if(remote.isNotEmpty()) item {Hint("DATABASE RESULTS · REVIEW VALUES")}
-   items(remote.distinctBy {it.id},key={"remote-"+it.id}) {FoodResult(it,d) {select(d.foods.find {f->f.id==it.id}?:it)}}
-   if(!searching && local.isEmpty() && remote.isEmpty()) item {Hint("Search a food to get started. Saved foods will appear here for offline reuse.")}
+   items(remote.distinctBy {it.id}.filter {f->local.none {it.id==f.id} && offlineMatches.none {it.id==f.id}},key={"remote-"+it.id}) {FoodResult(it,d) {select(d.foods.find {f->f.id==it.id}?:it)}}
+   if(!searching && local.isEmpty() && offline.isEmpty() && remote.isEmpty()) item {Hint("Type a food to search the built-in USDA catalog. Search databases adds online results.")}
    item {Hint("Open Food Facts contributors · ODbL. USDA FoodData Central. Values come from the selected provider, never a blend of records.")}
   }
  }
