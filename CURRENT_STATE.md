@@ -55,3 +55,5 @@ optional per-food unit preferences. Keep the old app/data and backup until verif
 Next owner task: install the release, import each phone's own backup, compare records
 and daily totals, then verify a future higher-version release installs over it intact.
 See docs/RELEASES.md for detailed steps, credential-mode limits and secure key recovery.
+
+Initial Actions run 40821395420 built and tested the signed credential-free APK successfully. API 26 installation/reinstall passed. API 35 installed and launched successfully but its smoke UID lookup failed; the verifier now uses the portable package-manager UID listing. Official Actions dependencies and Ubuntu image are updated/pinned following concrete deprecation notices. Corrected workflow verification is pending.

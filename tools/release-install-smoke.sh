@@ -7,9 +7,10 @@ adb shell am start -W -n com.foodlogger/.MainActivity | tee /tmp/foodlogger-laun
 grep -q 'Status: ok' /tmp/foodlogger-launch.txt
 sleep 3
 adb shell pidof com.foodlogger
-before=$(adb shell dumpsys package com.foodlogger | grep 'userId=' | head -1)
+before=$(adb shell pm list packages -U com.foodlogger | tr -d '\r')
+test -n "$before"
 adb install -r "$apk"
-after=$(adb shell dumpsys package com.foodlogger | grep 'userId=' | head -1)
+after=$(adb shell pm list packages -U com.foodlogger | tr -d '\r')
 test "$before" = "$after"
 adb shell am force-stop com.foodlogger
 adb shell am start -W -n com.foodlogger/.MainActivity | tee /tmp/foodlogger-reopen.txt
