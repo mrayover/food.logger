@@ -52,7 +52,7 @@ import java.time.LocalDate
   }
  }
  picked?.let { f->QuantityDialog(f,d,null,{picked=null},save={q->vm.work({picked=null;if(screen!="Food Library")screen="Log"}) {vm.repository.log(f,q,date,meal,d)}}) }
- editEntry?.let { e->QuantityDialog(Food(name=e.name,serving=e.serving,grams=e.grams,nutrition=e.nutrition,lastQuantity=e.quantity),d,e,{editEntry=null},{q->vm.work({editEntry=null}) {vm.repository.dao.entry(e.copy(quantity=q))}},{vm.work({editEntry=null}) {vm.repository.dao.deleteEntry(e.id)}}) }
+ editEntry?.let { e->QuantityDialog(Food(id="entry-${e.id}",name=e.name,serving=e.serving,grams=e.grams,nutrition=e.nutrition,lastQuantity=e.quantity),d,e,{editEntry=null},{q->vm.work({editEntry=null}) {vm.repository.dao.entry(e.copy(quantity=q))}},{vm.work({editEntry=null}) {vm.repository.dao.deleteEntry(e.id)}}) }
  editFood?.let {f->FoodEditor(f,d,{editFood=null}) {food,parts->vm.work({editFood=null;if(screen=="Add food")picked=food}) {vm.repository.saveFood(food,parts,d)}} }
  if(weightDialog) WeightDialog(d,{weightDialog=false}) {w->vm.work({weightDialog=false}) {vm.repository.dao.weight(w)}}
  if(targetDialog) TargetEditor(if(screen=="Recommendation") draft!!.analysis.proposed else Engine.targetOn(d.targets,today()),d.settings,{targetDialog=false}) { t->vm.work({targetDialog=false;if(screen=="Recommendation"){screen="Prior check-ins";draft=null;correctionId=null}}) {if(screen=="Recommendation")saveDecision(vm,draft!!,"Manual",t) else vm.repository.dao.target(t)} }

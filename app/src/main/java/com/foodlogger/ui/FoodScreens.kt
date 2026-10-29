@@ -42,7 +42,25 @@ import java.io.File
  }
  val scope=rememberCoroutineScope();val context=LocalContext.current
  var job by remember {mutableStateOf<Job?>(null)}
- fun runSearch(code: String?=null) {job?.cancel();job=scope.launch {searching=true;messages=emptyList();try {val r=vm.search.search(code?:query,code!=null);remote=r.foods;messages=r.messages;if(code!=null){if(r.foods.isNotEmpty()) select(r.foods.first()) else messages=messages+"Barcode not found. Scan the label or create this food manually."}}finally{searching=false}}}
+ fun runSearch(code: String?=null) {
+  job?.cancel();remote=emptyList();messages=emptyList()
+  if(code!=null) {
+   if(FoodIdentity.barcode(code)==null) {searching=false;messages=listOf("Enter a complete UPC or EAN barcode (8, 12, 13 or 14 digits).");return}
+   FoodIdentity.savedBarcode(code,d.foods)?.let {searching=false;select(it);return}
+  }
+  job=scope.launch {
+   searching=true
+   try {
+    val r=vm.search.search(code?:query,code!=null)
+    remote=FoodIdentity.unique(r.foods.map {FoodIdentity.saved(it,d.foods)?:it});messages=r.messages
+    if(code!=null) {
+     val found=remote.firstOrNull {FoodIdentity.barcode(it.barcode)==FoodIdentity.barcode(code)}
+     if(found!=null)select(found)
+     else messages=messages+"No usable nutrition was found for this barcode. Scan the label or create this food manually."
+    }
+   } finally {searching=false}
+  }
+ }
  val barcode=rememberLauncherForActivityResult(ScanContract()) {r->r.contents?.let {query=it;runSearch(it)}}
  val scannerOptions=ScanOptions().setDesiredBarcodeFormats(ScanOptions.PRODUCT_CODE_TYPES).setPrompt("Scan a UPC or EAN barcode").setBeepEnabled(false).setOrientationLocked(false)
  fun recognize(uri: Uri) {
@@ -80,7 +98,7 @@ import java.io.File
   }
  }
  if(showScan)AlertDialog(onDismissRequest={showScan=false},title={Text("Scan nutrition label")},text={Text("Use a clear photo of the serving size and nutrition panel. You will review and correct all extracted values before saving.")},confirmButton={TextButton({showScan=false;if(ContextCompat.checkSelfPermission(context,Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED)takePhoto()else cameraPermission.launch(Manifest.permission.CAMERA)}) {Text("Take photo")}},dismissButton={TextButton({showScan=false;gallery.launch("image/*")}) {Text("Choose photo")}})
- if(barcodeEntry) {var code by remember {mutableStateOf("")};AlertDialog(onDismissRequest={barcodeEntry=false},title={Text("Barcode lookup")},text={Field("UPC / EAN",code,{code=it.filter(Char::isDigit)},true)},confirmButton={TextButton({query=code;barcodeEntry=false;runSearch(code)},enabled=code.length in 8..14) {Text("Look up")}},dismissButton={TextButton({barcodeEntry=false}) {Text("Cancel")}})}
+ if(barcodeEntry) {var code by remember {mutableStateOf("")};AlertDialog(onDismissRequest={barcodeEntry=false},title={Text("Barcode lookup")},text={Field("UPC / EAN",code,{code=it.filter(Char::isDigit)},true)},confirmButton={TextButton({query=code;barcodeEntry=false;runSearch(code)},enabled=FoodIdentity.barcode(code)!=null) {Text("Look up")}},dismissButton={TextButton({barcodeEntry=false}) {Text("Cancel")}})}
  DisposableEffect(Unit) {onDispose {job?.cancel()}}
 }
 @Composable fun FoodResult(f: Food,d: AppData,click: ()->Unit) {Surface(onClick=click,shape=androidx.compose.foundation.shape.RoundedCornerShape(16.dp),color=androidx.compose.ui.graphics.Color.White) {Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {Text((if(f.favorite) "★ " else "")+f.name,style=MaterialTheme.typography.titleMedium);Hint(listOf(f.brand,f.serving,f.source).filter {it.isNotBlank()}.joinToString(" · "));NutritionText(runCatching {Engine.foodNutrition(f,d.foods,d.components)}.getOrDefault(f.nutrition))}}}

@@ -7,6 +7,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.foodlogger.domain.*
@@ -49,16 +51,26 @@ import java.time.LocalDate
  if(copy) AlertDialog(onDismissRequest={copy=false},title={Text("Copy previous day?")},text={Text("Entries will be added to $date. Existing entries stay in place; the day is not marked complete automatically.")},confirmButton={TextButton({onCopy();copy=false}) {Text("Copy")}},dismissButton={TextButton({copy=false}) {Text("Cancel")}})
 }
 @Composable fun QuantityDialog(food: Food,d: AppData,entry: LogEntry?,dismiss: ()->Unit,save: (Double)->Unit,delete: (()->Unit)?=null) {
- var unit by rememberSaveable {mutableStateOf(if(food.grams!=null) d.settings.foodUnit else "servings")};var amount by rememberSaveable {mutableStateOf(when(unit){"g"->(food.lastQuantity*food.grams!!).toString();"oz"->(food.lastQuantity*food.grams!!/28.349523125).toString();else->food.lastQuantity.toString()})};var confirmDelete by remember {mutableStateOf(false)}
+ val context=LocalContext.current
+ val preferences=remember(context) {context.getSharedPreferences("food-quantity-units",Context.MODE_PRIVATE)}
+ var unit by rememberSaveable(food.id,entry?.id) {mutableStateOf(FoodQuantity.initialUnit(food,d.settings.foodUnit,if(entry==null)preferences.getString(food.id,null)else null))}
+ var amount by rememberSaveable(food.id,entry?.id) {mutableStateOf(FoodQuantity.amount(food.lastQuantity,unit,food.grams).toString())};var confirmDelete by remember {mutableStateOf(false)}
  val q=runCatching {Engine.multiplier(amount.toDouble(),unit,food.grams)}.getOrNull()
  val n=runCatching {Engine.foodNutrition(food,d.foods,d.components)}.getOrDefault(food.nutrition)
- AlertDialog(onDismissRequest=dismiss,title={Text(food.name)},text={Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
-  Hint("Base: ${food.serving}${food.grams?.let { " ($it g)" } ?: ""}")
-  Choice(if(food.grams!=null)listOf("servings","g","oz") else listOf("servings"),unit) {next->val current=q?:1.0;unit=next;amount=when(next){"g"->(current*food.grams!!).toString();"oz"->(current*food.grams!!/28.349523125).toString();else->current.toString()}}
-  Field("Quantity",amount,{amount=it},true);q?.let {NutritionText(n*it)}
+ AlertDialog(onDismissRequest=dismiss,title={Text(food.name)},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+  Text("Serving: ${food.serving}",style=MaterialTheme.typography.titleMedium)
+  Choice(FoodQuantity.units(food),unit) {next->q?.let {current->unit=next;amount=FoodQuantity.amount(current,next,food.grams).toString()}}
+  Field("Quantity ($unit)",amount,{amount=it},true);q?.let {quantity->
+   val total=n*quantity
+   NutritionText(total)
+   Hint("Fiber ${total.fiber.f(1)} g · Sugar ${total.sugar.f(1)} g · Sodium ${total.sodium.f(0)} mg")
+   if(total.ethanol>0)Hint("Ethanol ${total.ethanol.f(1)} g")
+   food.grams?.let {g->Hint("Equivalent weight: ${(g*quantity).f(2)} g")}
+  }
+  if(q==null)Hint("Enter a positive quantity before changing units or logging.")
   if(food.kind=="SAVED_MEAL")Hint("Adds each component separately so you can edit them afterward.")
   if(delete!=null) TextButton({confirmDelete=true}) {Text("Delete entry",color=Red)}
- }},confirmButton={TextButton({q?.let(save)},enabled=q!=null) {Text(if(entry==null) "Add" else "Save")}},dismissButton={TextButton(dismiss) {Text("Cancel")}})
+ }},confirmButton={TextButton({q?.let {if(entry==null)preferences.edit().putString(food.id,unit).apply();save(it)}},enabled=q!=null) {Text(if(entry==null) "Add" else "Save")}},dismissButton={TextButton(dismiss) {Text("Cancel")}})
  if(confirmDelete)AlertDialog(onDismissRequest={confirmDelete=false},title={Text("Delete this entry?")},confirmButton={TextButton({delete?.invoke()}) {Text("Delete")}},dismissButton={TextButton({confirmDelete=false}) {Text("Cancel")}})
 }
 @Composable fun AlcoholEditor(d: AppData,save: (LogEntry,Food?)->Unit) {
