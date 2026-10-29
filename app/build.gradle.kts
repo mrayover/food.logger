@@ -7,6 +7,11 @@ plugins {
  id("com.google.devtools.ksp")
 }
 val secrets = Properties().apply { rootProject.file("secrets.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) } }
+val releaseProperties = Properties().apply { rootProject.file("release-signing.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) } }
+fun releaseValue(name: String) = System.getenv(name)?.takeIf { it.isNotBlank() } ?: releaseProperties.getProperty(name)?.takeIf { it.isNotBlank() }
+val releaseNames = listOf("RELEASE_STORE_FILE", "RELEASE_STORE_PASSWORD", "RELEASE_KEY_ALIAS", "RELEASE_KEY_PASSWORD")
+val releaseReady = releaseNames.all { releaseValue(it) != null }
+val usdaKey = (System.getenv("USDA_API_KEY") ?: secrets.getProperty("USDA_API_KEY") ?: "").trim()
 android {
  namespace = "com.foodlogger"
  compileSdk = 35
@@ -14,13 +19,29 @@ android {
   applicationId = "com.foodlogger"
   minSdk = 26
   targetSdk = 35
-  versionCode = 2
-  versionName = "1.0.1"
+  versionCode = 3
+  versionName = "1.0.2"
   testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-  val key = (secrets.getProperty("USDA_API_KEY") ?: System.getenv("USDA_API_KEY") ?: "").replace("\\", "\\\\").replace("\"", "\\\"")
+  val key = usdaKey.replace("\\", "\\\\").replace("\"", "\\\"")
   buildConfigField("String", "USDA_API_KEY", "\"$key\"")
  }
- buildTypes { debug { applicationIdSuffix = ".debug" }; release { isMinifyEnabled = false } }
+ signingConfigs {
+  if(releaseReady) create("permanentRelease") {
+   storeFile = rootProject.file(releaseValue("RELEASE_STORE_FILE")!!)
+   storePassword = releaseValue("RELEASE_STORE_PASSWORD")
+   keyAlias = releaseValue("RELEASE_KEY_ALIAS")
+   keyPassword = releaseValue("RELEASE_KEY_PASSWORD")
+   storeType = "PKCS12"
+  }
+ }
+ buildTypes {
+  debug { applicationIdSuffix = ".debug" }
+  release {
+   isMinifyEnabled = false
+   isDebuggable = false
+   if(releaseReady) signingConfig = signingConfigs.getByName("permanentRelease")
+  }
+ }
  buildFeatures { compose = true; buildConfig = true }
  compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
  kotlinOptions { jvmTarget = "17" }
@@ -53,4 +74,12 @@ dependencies {
  androidTestImplementation("androidx.compose.ui:ui-test-junit4")
  androidTestImplementation("androidx.room:room-testing:2.6.1")
  debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
+
+// Debug/tests remain available without signing secrets; distributable release tasks fail closed.
+tasks.configureEach {
+ if(name in listOf("validateSigningRelease", "packageRelease", "bundleRelease")) doFirst {
+  check(releaseReady) { "Release signing is not configured. See docs/RELEASES.md; never generate a replacement key." }
+  check(usdaKey.isNotBlank() || providers.gradleProperty("allowMissingUsdaKey").orNull == "true") { "USDA_API_KEY is missing. Public CI must explicitly use -PallowMissingUsdaKey=true; see docs/RELEASES.md." }
+ }
 }

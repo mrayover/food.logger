@@ -10,3 +10,7 @@ secrets.properties
 # Local build deliveries; preserve packages without committing credentials or binaries.
 /deliverables/
 /tools/__pycache__/
+
+# Permanent release signing (private, local only).
+/.signing/
+/release-signing.properties
