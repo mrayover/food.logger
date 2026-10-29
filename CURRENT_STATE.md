@@ -1,59 +1,98 @@
-# Food.Logger — permanent signed release setup
+# Food.Logger — signed releases verified
 
-Release packaging source baseline: deaa767 on serving-barcode-improvements.
-Working checkout: C:\Users\mrove\Projects\food.logger. GitHub mrayover/food.logger
-remains the source of truth. Release source/verification publication is in progress;
-final run results and actual remote revisions will be recorded after Actions completes.
+Verified 2026-10-28 America/Los_Angeles. Checkout: C:\Users\mrove\Projects\food.logger.
+GitHub mrayover/food.logger/main is the source of truth. Release implementation source
+82738df; corrected CI/tooling source 5fbd015. Later verification-record commits change
+only documentation; APK/source provenance remains exact in each BUILD_INFO.json.
 
-## Identity and delivery
+## Ready deliveries
 
-- First release: version 1.0.2/code 3; stable application ID com.foodlogger.
-- Debug development configuration remains com.foodlogger.debug with its original key.
-- Permanent release RSA-4096 PKCS12 key generated once; CI only restores that existing key.
-- Public certificate SHA-256 (committed pin):
-  6ed276d4c4e57da5c32811e967a351e1665ce5bf7aa27cc78a9cc5205ba24e84.
-- Private key/recovery files are ignored and Windows-access restricted. An identical
-  protected backup exists outside the checkout at C:\Users\mrove\Food.Logger-Release-Key-Backup.
-  Owner still needs an encrypted off-computer copy of the key AND recovery password.
-- Four encrypted Actions signing secrets are configured. No private signing values are
-  committed. See docs/RELEASES.md for exact names and secure setup/recovery instructions.
-- Owner declined public artifacts containing an extractable USDA key. The USDA Actions
-  secret was removed. Public CI forces an empty USDA key, verifies it, and uploads only
-  the credential-free signed release. Offline USDA and Open Food Facts continue working.
-  Authenticated USDA online search remains available in the private LOCAL release only.
-- Local private APK: deliverables/Food.Logger-release.apk. Versioned delivery and source
-  provenance will be recorded by tools/Publish-ReleaseApk.ps1 and LATEST-RELEASE.txt.
-- Future updates MUST retain this key/application ID and increase versionCode (next >=4).
+Version 1.0.2 / code 3. Stable release ID: com.foodlogger. Development retains
+com.foodlogger.debug and its original debug configuration. Next distributed update
+must increase versionCode to >=4 while keeping the SAME release ID and signing key.
 
-## Implementation and checks so far
+- PRIVATE local APK with USDA online search: deliverables/Food.Logger-release.apk.
+  Exact package folder/source revision: deliverables/LATEST-RELEASE.txt.
+  SHA-256: 78480cc0b9929f0f17c7afb26e282b953a4e9855e8ccb1adf5877e510ad8e4e4.
+- PUBLIC credential-free signed APK: Actions run 40822264911, artifact
+  Food.Logger-signed-release-2. Download/extract the ZIP in a browser; no Android Studio.
+  https://github.com/mrayover/food.logger/actions/runs/40822264911
+  Local verified copy: deliverables/actions/40822264911/release/Food.Logger-release.apk.
+  SHA-256: 49518aa552826dd7b1c3d62fec89414464228cf77c3e33be0313c5831eb9f82c.
 
-Gradle release uses protected local properties or Actions environment signing values,
-non-debuggable release configuration, and fails closed without signing credentials.
-Debug builds/tests still work without release credentials. Public CI must explicitly
-opt into a missing USDA key; it never receives that key. Action dependencies are pinned.
-No functionality/UI/database/catalog refactoring was performed.
+Owner declined publishing an extractable USDA key. The public Actions build contains
+NO USDA credentials: offline USDA catalog and Open Food Facts online search/barcodes
+work; authenticated USDA online search is disabled. Full USDA-enabled APK stays LOCAL.
+Both delivery modes share the permanent certificate and application ID. The owner and
+wife can privately install the local configured APK on both phones. Do not upload it
+or generated BuildConfig to public artifacts. USDA_API_KEY remains only in the ignored
+local secrets.properties; its unused Actions secret was removed.
 
-Initial local command: testDebugUnitTest testReleaseUnitTest assembleDebug assembleRelease;
-BUILD SUCCESSFUL in 2m45s, 47 tests passed per variant (94 total), zero failures/errors.
-A new independent-store JSON backup-transfer test is included in final verification.
-Local release package/signature/v2 signing/API26-35 manifest/native ABIs/catalog checksum
-verified. API26/35 emulator installation checks are configured in Actions, not yet run.
-No phone installation or camera testing claimed. Room remains version 2, migration 1->2;
-backup schema remains 1. Existing data is never cleared as part of release installation.
+## Permanent signing and repeatability
 
-## Owner workflow and next acceptance
+Generated ONCE: RSA-4096 PKCS12 release key, reused locally and restored (not generated)
+by Actions. Public certificate SHA-256, pinned in config/release-certificate.sha256:
+6ed276d4c4e57da5c32811e967a351e1665ce5bf7aa27cc78a9cc5205ba24e84.
 
-Read docs/RELEASES.md. GitHub Desktop: pull main, make scoped updates and increment app
-versionCode/versionName, commit and Push origin. Browser: Actions -> Signed Android
-release -> completed run -> Artifacts -> Food.Logger-signed-release-<run number>.
-Download/extract APK; no Android Studio required. Artifacts expire after 90 days.
+Private key/recovery: ignored .signing/; local signing values: release-signing.properties.
+Windows permissions restrict these to the owner and SYSTEM. A verified protected copy
+exists outside the checkout: C:\Users\mrove\Food.Logger-Release-Key-Backup. This is
+still on the same computer: owner must place key AND recovery password in encrypted
+off-computer storage. Never generate a replacement key for a failed build.
 
-The release and previous debug app install side by side. On EACH phone, export Settings
--> Export complete backup from the debug app; import that JSON into the fresh release
-app. Import replaces destination records, does not merge phones, and does not transfer
-optional per-food unit preferences. Keep the old app/data and backup until verified.
-Next owner task: install the release, import each phone's own backup, compare records
-and daily totals, then verify a future higher-version release installs over it intact.
-See docs/RELEASES.md for detailed steps, credential-mode limits and secure key recovery.
+Four encrypted repository Actions secrets are already configured:
+RELEASE_KEYSTORE_BASE64, RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD.
+Exact secure setup/recovery instructions are in docs/RELEASES.md; no secret values are
+in Git, source archives, chat or public logs. No USDA secret is used by public Actions.
 
-Initial Actions run 40821395420 built and tested the signed credential-free APK successfully. API 26 installation/reinstall passed. API 35 installed and launched successfully but its smoke UID lookup failed; the verifier now uses the portable package-manager UID listing. Official Actions dependencies and Ubuntu image are updated/pinned following concrete deprecation notices. Corrected workflow verification is pending.
+Workflow: .github/workflows/release.yml, pinned official actions and Ubuntu 24.04.
+Main pushes build/test and upload signed, non-debuggable credential-free APKs with
+source ZIP/identity/checksums. Manual Run workflow rebuilds a selected source revision.
+PRs run debug checks without signing secrets. Public verification fails if USDA is
+configured, signing pin differs, package/version/SDK differs, or catalog checksum fails.
+Actions artifacts expire after 90 days; retain trusted copies locally.
+
+Local private publishing: tools/Publish-ReleaseApk.ps1 after successful release build
+and source commit. It preserves versioned builds and produces APK, source ZIP, metadata,
+test evidence and LATEST-RELEASE.txt under deliverables. Debug publisher remains intact.
+
+## Verification actually completed
+
+- Initial local signed debug/release build passed; final local tests: 48 debug + 48
+  release = 96, zero failures/errors/skips. Final build/test command completed in 1m9s.
+- Hosted corrected run 40822264911: build SUCCESS; 48 debug + 48 release tests passed.
+  Downloaded CI test XML independently checked: 96 total, zero failures/errors/skips.
+- Android API 26 (8.0) and API 35 (15) emulator jobs both SUCCESS: fresh installation,
+  launch, same-version install -r, unchanged app UID, force-stop and successful relaunch.
+- Initial run 40821395420: build and API26 passed. API35 installed/launched but the old
+  dumpsys UID field lookup failed. The smoke script now uses portable pm UID listing;
+  corrected run passed on both. No app/data change was needed to fix the test.
+- Local AND downloaded Actions APK signatures/pinned certificate, package com.foodlogger,
+  code3, non-debuggable status, minSdk26/target35, all four native ABIs and unchanged
+  7,793-food catalog checksum verified. Both APKs use the SAME permanent certificate.
+- Negative guards tested: configured private APK is rejected for public delivery;
+  debug-signed APK is rejected for release publishing.
+- New independent-store complete JSON backup/restore test preserves exact AppData and
+  historical nutrition snapshots; original source store remains unchanged.
+- No real-phone installation, camera scan, physical-phone import or higher-code future
+  update was performed. Emulator reinstall does not assert preservation of real meals.
+- Non-failing CI advisories remain for the third-party Android setup action's Node20
+  runtime being forced to Node24 and the existing Gradle8.9 toolchain age. Official
+  actions were updated to current pinned releases; no unrelated AGP/Kotlin upgrade.
+
+## Data migration and next owner task
+
+No nutrition/UI/features/database/catalog changes. Room remains version2, migration1->2,
+backup schema1. Debug and release IDs are DIFFERENT apps and have separate data stores.
+Install release alongside debug; it does not automatically migrate debug private data.
+
+On EACH phone: Settings -> Export complete backup from DEBUG (not dashboard summary),
+install release, Import complete backup into the fresh release, compare foods/logs/
+daily totals/weights/goals/check-ins. Import REPLACES destination data, does not merge
+phones, and omits optional per-food unit preferences. Keep old app/data and JSON backup
+until verified. Future releases update com.foodlogger in place using the same key and
+higher versionCode; never uninstall/clear data to bypass signature errors.
+
+Next task: perform that phone acceptance on both phones, and secure the off-computer
+signing backup. Detailed owner GitHub Desktop/browser workflow, exact secrets, migration,
+credential-mode limitations and recovery: docs/RELEASES.md.
