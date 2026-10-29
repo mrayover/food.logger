@@ -6,3 +6,7 @@ local.properties
 *.keystore
 secrets.properties
 .kotlin/
+
+# Local build deliveries; preserve packages without committing credentials or binaries.
+/deliverables/
+/tools/__pycache__/

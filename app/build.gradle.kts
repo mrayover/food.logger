@@ -14,8 +14,8 @@ android {
   applicationId = "com.foodlogger"
   minSdk = 26
   targetSdk = 35
-  versionCode = 1
-  versionName = "1.0.0"
+  versionCode = 2
+  versionName = "1.0.1"
   testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   val key = (secrets.getProperty("USDA_API_KEY") ?: System.getenv("USDA_API_KEY") ?: "").replace("\\", "\\\\").replace("\"", "\\\"")
   buildConfigField("String", "USDA_API_KEY", "\"$key\"")
